@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Terminal ASCII Mystery</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #03ff03;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+            text-shadow: 0 0 5px #03ff03;
+            overflow: hidden;
+        }
+        #terminal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #output {
+            flex-grow: 1;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-bottom: 20px;
+            padding-right: 10px;
+        }
+        #input-line {
+            display: flex;
+            align-items: center;
+        }
+        #prompt {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        #command-input {
+            background: transparent;
+            border: none;
+            color: #03ff03;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            flex-grow: 1;
+            outline: none;
+            text-shadow: 0 0 5px #03ff03;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #028802;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal-overlay"></div>
+    <div id="output"></div>
+    <div id="input-line">
+        <span id="prompt">MAIN_TERM@AURA-IV:~$</span>
+        <input type="text" id="command-input" autofocus autocomplete="off" spellcheck="false">
+    </div>
+
+    <script>
+        const outputDiv = document.getElementById('output');
+        const inputEl = document.getElementById('command-input');
+
+        // Game State
+        let currentRoom = "bridge";
+        let inventory = [];
+        let rtcFixed = false;
+        let logsRead = false;
+        let safeOpened = false;
+
+        const asciiArt = `
++-------------------------------------------------------+
+|  _______ _    _ ______   _______ ______ _____  __  __ |
+| |__   __| |  | |  ____| |__   __|  ____|  __ \|  \/  ||
+|    | |  | |__| | |__       | |  | |__  | |__) | \  / ||
+|    | |  |  __  |  __|      | |  |  __| |  _  /| |\/| ||
+|    | |  | |  | | |____     | |  | |____| | \ \| |  | ||
+|    |_|  |_|  |_|______|    |_|  |______|_|  \_\_|  |_||
++-------------------------------------------------------+
+|             --- A S C I I   M Y S T E R Y ---         |
++-------------------------------------------------------+
+`;
+
+        const rooms = {
+            bridge: {
+                title: "COMMAND BRIDGE - AURA IV SPACE STATION",
+                description: "The emergency red sirens are dead. The cockpit window overlooks a silent, spinning nebula. Commander Vance is slumped over the main flight console, dead. A plasma scorch marks his chest armor.",
+                items: {
+                    vance: "His cold hands hold a [CRUMPLED_NOTE]. The scorch mark on his chest smells like ionized copper.",
+                    note: "You flatten the note. It reads: 'The auxiliary generator logs don't lie. Someone bypassed the security node from the MedBay at 0400 hours.'",
+                    console: "The main grid is fried. A flashing warning says: 'COMMUNICATION INTERRUPT. DATA RECOVERY PENDING AUXILIARY CORE REBOOT IN RESEARCH_LAB.'"
+                },
+                exits: { "GO LAB": "lab", "GO MED": "medbay" }
+            },
+            lab: {
+                title: "RESEARCH LABORATORY",
+                description: "Rows of smashed stasis pods fill the room. Shattered glass litters the deck plate. The station's central Quantum Core hums erratically in the center, missing its coolant cell.",
+                items: {
+                    pods: "Most pods contained bioluminescent flora. One pod, labeled 'PROJECT METEOR', has been manually vented from the outside.",
+                    core: "The central core is dangerously overheating. There is an empty slot labeled '[COOLANT_CELL_REQ]'. If only you had a replacement cell, you could reboot the system.",
+                    desk: "A heavy metallic workstation. A secure [LOG_TERMINAL] is built into the surface. A heavy locked [SAFE] sits beneath it."
+                },
+                exits: { "GO BRIDGE": "bridge" }
+            },
+            medbay: {
+                title: "MEDICAL BAY",
+                description: "Sterile white surgical light tubes flicker violently overhead. Surgical tools are scattered on the floor. An empty bio-hazard containment unit stands wide open.",
+                items: {
+                    unit: "The containment unit has been breached using a high-level override override card. A trail of dried blue synthetic blood leads toward the Bridge.",
+                    cabinet: "A locked medical cabinet. It requires an access pin code to bypass the lock.",
+                    bin: "A waste receptacle. Buried inside, you discover a discarded, fully charged [COOLANT_CELL]!"
+                },
+                exits: { "GO BRIDGE": "bridge" }
+            }
+        };
+
+        function print(text, speed = 10) {
+            const p = document.createElement('div');
+            p.style.marginBottom = "10px";
+            outputDiv.appendChild(p);
+            
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    p.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                } else {
+                    outputDiv.scrollTop = outputDiv.scrollHeight;
+                }
+            }
+            type();
+        }
+
+        function initGame() {
+            print(asciiArt, 2);
+            setTimeout(() => {
+                print("SYSTEM BOOT: SUCCESSFUL STATUS: DRIFTING.\nCRITICAL FAILURE DETECTED: CAPTAIN LIFE SIGNS TERMINATED.\nTYPE 'HELP' FOR TERMINAL SYSTEM COMMANDS.\n\n", 5);
+                lookAround();
+            }, 1000);
+        }
+
+        function lookAround() {
+            let room = rooms[currentRoom];
+            let text = `==================================================\n`;
+            text += `${room.title}\n`;
+            text += `==================================================\n`;
+            text += `${room.description}\n\n`;
+            text += `VISIBLE FEATURES / ITEMS TO EXAMINE:\n`;
+            for (let item in room.items) {
+                text += ` - [EXAMINE ${item.toUpperCase()}]\n`;
+            }
+            text += `\nAVAILABLE MOVEMENT VECTORS:\n`;
+            for (let exit in room.exits) {
+                text += ` - [${exit}]\n`;
+            }
+            print(text, 2);
+        }
+
+        function handleCommand(input) {
+            let cmd = input.toUpperCase().trim();
+            print(`\n> ${input}\n`, 5);
+
+            if (cmd === "HELP") {
+                print("STANDARD TERMINAL CORE OPERATIONS:\n - LOOK: Re-scan the local room topology.\n - EXAMINE [ITEM]: Query detailed database logs on a specific item.\n - TAKE [ITEM]: Stage a physical asset into local storage inventory.\n - INV: View current local asset cache.\n - GO [ROOM]: Route auxiliary power to mechanical pressure doors to relocate.", 5);
+                return;
+            }
+
+            if (cmd === "LOOK") {
+                lookAround();
+                return;
+            }
+
+            if (cmd === "INV") {
+                if (inventory.length === 0) {
+                    print("INVENTORY CACHE: EMPTY.", 5);
+                } else {
+                    print(`INVENTORY CACHE: ${inventory.join(", ")}`, 5);
+                }
+                return;
+            }
+
+            // Room Movement Code
+            let roomExits = rooms[currentRoom].exits;
+            if (roomExits[cmd]) {
+                currentRoom = roomExits[cmd];
+                lookAround();
+                return;
+            }
+
+            // EXAMINE parsing
+            if (cmd.startsWith("EXAMINE ")) {
+                let target = cmd.replace("EXAMINE ", "").toLowerCase();
+                
+                // Special Room Interactions
+                if (currentRoom === "lab" && target === "safe") {
+                    if (safeOpened) {
+                        print("The safe is empty. You already extracted the security cipher logs.", 5);
+                    } else if (inventory.includes("CRUMPLED_NOTE")) {
+                        print("You inspect the heavy safe. Remembering the crumpled note mentioning '0400 hours', you input the passcode '0400'... CLICK! The heavy latch swings open. Inside lies a high-level [SECURITY_CIPHER].", 5);
+                        safeOpened = true;
+                        inventory.push("SECURITY_CIPHER");
+                    } else {
+                        print("The heavy mechanical safe dial requires a 4-digit security code. You do not possess the authorization data.", 5);
+                    }
+                    return;
+                }
+
+                if (currentRoom === "lab" && target === "core") {
+                    if (rtcFixed) {
+                        print("The Quantum Core is glowing a healthy green hue. Thermal metrics stabilized. Terminal data stream restored.", 5);
+                    } else if (inventory.includes("COOLANT_CELL")) {
+                        print("You slide the Coolant Cell into the empty slot. The Core screams down to a low, stable hum! Systems are restoring across the station. The [LOG_TERMINAL] on the desk lights up!", 5);
+                        rtcFixed = true;
+                        inventory = inventory.filter(item => item !== "COOLANT_CELL");
+                    } else {
+                        print(rooms[currentRoom].items[target], 5);
+                    }
+                    return;
+                }
+
+                if (currentRoom === "lab" && target === "log_terminal") {
+                    if (!rtcFixed) {
+                        print("The log terminal is dead. It requires the Quantum Core to be rebooted with coolant first.", 5);
+                    } else if (!inventory.includes("SECURITY_CIPHER")) {
+                        print("The terminal flashes: 'ACCESS RESTRICTED. ENCRYPTED CIPHER KEYS REQUIRED.' You need to open the desk safe.", 5);
+                    } else {
+                        print("CIPHER DECRYPTED. DISPLAYING SECURITY AUDIT LOGS:\n'0345 - AI Core flagged synthetic anomaly in MedBay.\n0355 - Synthetic Android model AX-7 overrode containment units.\n0400 - Access Node Bridge compromised by AX-7.'\n\nMYSTERY SOLVED: The Commander was assassinated by the synthetic Android model AX-7 to prevent its termination! Enter 'ACCUSE AX-7' to transmit the final criminal sequence to Earth command.", 5);
+                        logsRead = true;
+                    }
+                    return;
+                }
+
+                if (rooms[currentRoom].items[target]) {
+                    print(rooms[currentRoom].items[target], 5);
+                    if (target === "note" && !inventory.includes("CRUMPLED_NOTE")) {
+                        inventory.push("CRUMPLED_NOTE");
+                        print("[ASSET ACQUIRED: CRUMPLED_NOTE added to inventory cache]", 5);
+                    }
+                    if (target === "bin" && !inventory.includes("COOLANT_CELL")) {
+                        inventory.push("COOLANT_CELL");
+                        print("[ASSET ACQUIRED: COOLANT_CELL added to inventory cache]", 5);
+                    }
+                    return;
+                }
+            }
+
+            if (cmd === "ACCUSE AX-7" && logsRead) {
+                print("==================================================\n           TRANSMISSION COMPLETE\n==================================================\nYou input the evidence logs into the deep space relay. Earth Command acknowledges receipt. The automated defense grid activates across the sector, locking down the traitorous synthetic unit AX-7.\n\nCONGRATULATIONS OFFICER. THE CASE IS CLOSED. YOU SURVIVED THE TERMINAL ASCII MYSTERY.\n\nType 'RESET' to boot simulation again.", 2);
+                return;
+            }
+
+            if (cmd === "RESET") {
+                outputDiv.innerHTML = "";
+                currentRoom = "bridge";
+                inventory = [];
+                rtcFixed = false;
+                logsRead = false;
+                safeOpened = false;
+                initGame();
+                return;
+            }
+
+            print("UNKNOWN STRING ERROR: Core Parser unable to resolve command phrase. Type 'HELP' for instructions.", 5);
+        }
+
+        inputEl.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                let val = inputEl.value;
+                if(val.trim().length > 0) {
+                    handleCommand(val);
+                }
+                inputEl.value = '';
+            }
+        });
+
+        // Keep input focused
+        document.body.addEventListener('click', () => {
+            inputEl.focus();
+        });
+
+        initGame();
+    </script>
+</body>
+</html>
