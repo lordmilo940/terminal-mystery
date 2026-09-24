@@ -5,26 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Terminal: ASCII Mystery</title>
     <style>
-        body { background-color: #000; color: #03ff03; font-family: 'Courier New', monospace; font-size: 16px; margin: 0; padding: 20px; overflow: hidden; text-shadow: 0 0 5px #03ff03; }
-        body::before { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.25) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02), rgba(0,0,255,0.06)); z-index: 2; background-size: 100% 4px, 3px 100%; pointer-events: none; }
+        body { background-color: #000; color: #03ff03; font-family: 'Courier New', Courier, monospace; font-size: 16px; margin: 0; padding: 20px; overflow: hidden; text-shadow: 0 0 5px #03ff03; }
+        body::before { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0,  blue, 0.06)); z-index: 2; background-size: 100% 4px, 3px 100%; pointer-events: none; }
         #terminal { max-width: 800px; margin: 0 auto; height: calc(100vh - 60px); display: flex; flex-direction: column; }
         #output { flex-grow: 1; overflow-y: auto; white-space: pre-wrap; margin-bottom: 20px; padding-right: 10px; }
         #output::-webkit-scrollbar { width: 0px; }
         #input-line { display: flex; align-items: center; }
         #prompt { margin-right: 10px; font-weight: bold; }
-        #command-input { background: transparent; border: none; color: #03ff03; font-family: 'Courier New', monospace; font-size: 16px; flex-grow: 1; outline: none; text-shadow: 0 0 5px #03ff03; }
+        #command-input { background: transparent; border: none; color: #03ff03; font-family: 'Courier New', Courier, monospace; font-size: 16px; flex-grow: 1; outline: none; text-shadow: 0 0 5px #03ff03; }
     </style>
 </head>
 <body>
-<div id="terminal"><div id="output"></div><div id="input-line"><span id="prompt">MAIN_TERMINAL&gt;</span><input type="text" id="command-input" autofocus autocomplete="off"></div></div><script>
+<div id="terminal">
+    <div id="output"></div>
+    <div id="input-line"><span id="prompt">MAIN_TERMINAL&gt;</span><input type="text" id="command-input" autofocus autocomplete="off"></div>
+</div><script>
     const outputDiv = document.getElementById('output');
     const inputEl = document.getElementById('command-input');
     let currentRoom = "bridge", powerRestored = false, safeLocked = true, hasKeycard = false, gameActive = true, inventory = ["coolant cell"];
 
-    const introText = `======================================================================\nMAINFRAME OS v1.9.7.9 - DRIFTING RESEARCH STATION 'AURA-9'\n======================================================================\nCRITICAL ALERT: LIFE SUPPORT SYSTEMS MALFUNCTIONING.\nCOMMANDING OFFICER FOUND DEAD IN HIS QUARTERS. CAUSE: ASPIXATION.\nSOLO DETECTIVE SUBROUTINE INITIATED. CHRONICLING MYSTERY LOGS...\n\nType 'HELP' at any time to request terminal directory access.\n\n[CURRENT LOCATION: COMMAND BRIDGE]\nYou stand inside the dark command bridge. Shattered monitor glass floats \nsilently in zero-gravity. Dead control consoles flicker weakly. \nIn the center of the deck sits a heavy reinforced steel DESK with an \nelectronic digital SAFE integrated directly into its frame.\nAvailable sector bulkheads lead SOUTH to the REACTOR and EAST to the MEDBAY.`;
+    const introText = 
+`======================================================================
+MAINFRAME OS v1.9.7.9 - DRIFTING RESEARCH STATION 'AURA-9'
+======================================================================
+CRITICAL ALERT: LIFE SUPPORT SYSTEMS MALFUNCTIONING.
+COMMANDING OFFICER FOUND DEAD IN HIS QUARTERS. CAUSE: ASPIXATION.
+SOLO DETECTIVE SUBROUTINE INITIATED. CHRONICLING MYSTERY LOGS...
+
+Type 'HELP' at any time to request terminal directory access.
+
+[CURRENT LOCATION: COMMAND BRIDGE]
+You stand inside the dark command bridge. Shattered monitor glass floats 
+silently in zero-gravity. Dead control consoles flicker weakly. 
+In the center of the deck sits a heavy reinforced steel DESK with an 
+electronic digital SAFE integrated directly into its frame.
+Available sector bulkheads lead SOUTH to the REACTOR and EAST to the MEDBAY.`;
 
     function printToTerminal(text) { outputDiv.innerHTML += text + "\n\n"; outputDiv.scrollTop = outputDiv.scrollHeight; }
-    document.addEventListener('click', () => inputEl.focus());
+    document.addEventListener('click', () => { inputEl.focus(); });
 
     inputEl.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && gameActive) {
@@ -35,56 +53,56 @@
     });
 
     function handleCommand(cmd) {
-        if (cmd === "HELP") return `AURA-9 CENTRAL REPOSITORY DIRECTORY:\n----------------------------------------------------------------------\n- LOOK: Re-examine the current environmental surroundings.\n- GO [ROOM]: Direct thrusters to a sector (e.g., GO MEDBAY, GO BRIDGE, GO REACTOR).\n- EXAMINE [OBJECT]: Run close inspection diagnostics (e.g., EXAMINE DESK, EXAMINE TERMINAL).\n- USE [ITEM]: Activate an inventory component (e.g., USE COOLANT CELL).\n- UNLOCK SAFE [CODE]: Enter combination sequence into desk locker (e.g., UNLOCK SAFE 0000).\n- INV / INVENTORY: Query active item data-cache registers.\n- ACCUSE [NAME]: Formally charge the killer once final proof is secured.`;
-        if (cmd === "INV" || cmd === "INVENTORY") return "DATA-CACHE MANIFEST: " + (inventory.length ? inventory.map(i => i.toUpperCase()).join(", ") : "EMPTY");
-
+        if (cmd === "HELP") {
+            return `AURA-9 CENTRAL REPOSITORY DIRECTORY:\n----------------------------------------------------------------------\n- LOOK: Re-examine the current environmental surroundings.\n- GO [ROOM]: Direct thrusters to a sector (e.g., GO MEDBAY, GO BRIDGE, GO REACTOR).\n- EXAMINE [OBJECT]: Run close inspection diagnostics (e.g., EXAMINE DESK, EXAMINE TERMINAL).\n- USE [ITEM]: Activate an inventory component (e.g., USE COOLANT CELL).\n- UNLOCK SAFE [CODE]: Enter combination sequence into desk locker (e.g., UNLOCK SAFE 0000).\n- INV / INVENTORY: Query active item data-cache registers.\n- ACCUSE [NAME]: Formally charge the killer once final proof is secured.`;
+        }
+        if (cmd === "INV" || cmd === "INVENTORY") {
+            if (inventory.length === 0) return "Your structural inventory manifests zero physical components.";
+            return "DATA-CACHE MANIFEST: " + inventory.map(i => i.toUpperCase()).join(", ");
+        }
         if (cmd.startsWith("GO ")) {
-            let target = cmd.replace("GO ", "").trim();
-            if (target === "BRIDGE") { currentRoom = "bridge"; return `Decompressing doors... Entering BRIDGE sector.\n\n[LOCATION: COMMAND BRIDGE]\nYou return to the nerve center of Aura-9. The heavy metallic commander's DESK occupies the room, featuring ${safeLocked ? "a secure digital SAFE embedded into its panels" : "an open safe chamber"}.\nBulkheads lead EAST to the MEDBAY and SOUTH to the REACTOR ROOM.`; }
-            if (target === "MEDBAY" || target === "EAST") { currentRoom = "medbay"; return `Navigating transit tube... Entering MEDBAY sector.\n\n[LOCATION: MEDBAY]\nThe facility medical wing. ${powerRestored ? "Emergency status lamps cascade light across the chamber. Fixed securely against the wall is the primary MEDICAL TERMINAL console, displaying active memory stacks." : "Cold, pitch-black darkness blankets the room. A central MEDICAL TERMINAL console is mounted to the bulkhead wall, but its display grid is completely lifeless."}\nThe only emergency exit pathway leads WEST back to the BRIDGE.`; }
-            if (target === "REACTOR" || target === "SOUTH" || target === "REACTOR ROOM") { currentRoom = "reactor"; return `Descending core lift... Entering REACTOR ROOM.\n\n[LOCATION: REACTOR ROOM]\nThe pounding heart of the station. ${powerRestored ? "The nuclear reactor core glows with stable emerald illumination, humming perfectly." : "Total eclipse conditions. An empty core cradle sits exposed. The display blinks orange: 'CRITICAL OFFLINE - INSERT AUXILIARY COOLANT CELL'."}\nThe access lift leads NORTH back to the BRIDGE.`; }
-            return `NAVIGATION ERROR: Destination '${target}' unidentified. Use: GO BRIDGE, GO MEDBAY, or GO REACTOR.`;
+            let targetRoom = cmd.replace("GO ", "").trim();
+            if (targetRoom === "BRIDGE") {
+                currentRoom = "bridge";
+                return "Decompressing doors... Entering BRIDGE sector.\n\n[LOCATION: COMMAND BRIDGE]\nYou return to the nerve center of Aura-9. The heavy metallic commander's DESK occupies the room, featuring " + (safeLocked ? "a secure digital SAFE embedded into its side panels" : "an open, unlocked electronic safe chamber") + ".\nHydraulic bulkheads lead EAST toward the MEDBAY and SOUTH toward the REACTOR ROOM.";
+            }
+            if (targetRoom === "MEDBAY" || targetRoom === "EAST") {
+                currentRoom = "medbay";
+                return "Navigating transit tube... Entering MEDBAY sector.\n\n[LOCATION: MEDBAY]\n" + (powerRestored ? "The facility medical wing. Emergency status lamps cascade a low light across the sterile chamber. Empty medical pods sit open. Fixed securely against the wall is the primary MEDICAL TERMINAL console, displaying active memory stacks.\nThe only emergency exit pathway leads WEST back to the BRIDGE." : "The facility medical wing. Cold, pitch-black darkness blankets the room. Cryo-pods sit frozen and inactive. A central MEDICAL TERMINAL console is mounted to the bulkhead wall, but its display grid is completely lifeless.\nThe only emergency exit pathway leads WEST back to the BRIDGE.");
+            }
+            if (targetRoom === "REACTOR" || targetRoom === "SOUTH" || targetRoom === "REACTOR ROOM") {
+                currentRoom = "reactor";
+                return "Descending core lift... Entering REACTOR ROOM.\n\n[LOCATION: REACTOR ROOM]\n" + (powerRestored ? "The pounding heart of the star station. The nuclear reactor core glows with stable emerald illumination, humming perfectly. Mainframe diagnostic monitors indicate normal distribution arrays.\nThe access lift leads NORTH back to the BRIDGE." : "The pounding heart of the star station. Total eclipse conditions. An empty, vacant cooling core cradle sits exposed in the center floor plate. The central system display blinks orange: 'CRITICAL OFFLINE - SYSTEM HALTED - INSERT AUXILIARY COOLANT CELL'.\nThe access lift leads NORTH back to the BRIDGE.");
+            }
+            return `NAVIGATION INTERFACE ERROR: Destination '${targetRoom}' unidentified. Use: GO BRIDGE, GO MEDBAY, or GO REACTOR.`;
         }
-
         if (currentRoom === "reactor") {
-            if (cmd === "LOOK" || cmd === "EXAMINE ROOM") return powerRestored ? "REACTOR ROOM: The infrastructure hums with radioactive power. Mainframe arrays are active across all decks." : "REACTOR ROOM: Complete outage. Central core requires an auxiliary COOLANT CELL to re-engage electricity.";
+            if (cmd === "LOOK" || cmd === "EXAMINE ROOM") return powerRestored ? "REACTOR ROOM: The infrastructure hums with radioactive power. Magnetic fields are fully localized. High-voltage mainframe arrays are active across all station decks." : "REACTOR ROOM: Eerie quiet. Complete system outage. The central core housing requires an auxiliary COOLANT CELL to re-engage the facility electrical network.";
             if (cmd === "USE COOLANT CELL" || cmd === "INSERT CELL" || cmd === "INSERT COOLANT CELL") {
-                if (powerRestored) return "System diagnostics confirm the coolant loop is already active.";
-                if (inventory.includes("coolant cell")) { powerRestored = true; inventory = inventory.filter(i => i !== "coolant cell"); return "CRITICAL STATUS UPDATE: You slide the Coolant Cell into the magnetic slots.\nA massive mechanical roar shakes the plates! High-voltage circuits light up. All station computer mainframes are now BOOTING BACK TO LIFE."; }
-                return "You do not carry any coolant cell canisters.";
+                if (powerRestored) return "System diagnostics confirm the reactor's primary coolant loop is already fully charged and operational.";
+                if (inventory.includes("coolant cell")) { powerRestored = true; inventory = inventory.filter(item => item !== "coolant cell"); return "CRITICAL STATUS UPDATE: You slide the glowing heavy Coolant Cell into the empty magnetic core slots.\nA massive mechanical roar shakes the floor plates! High-voltage circuits light up across the bulkheads. Auxiliary power grid online! All station computer mainframes are now BOOTING BACK TO LIFE."; }
+                return "You do not carry any coolant cell canisters inside your data-cache.";
             }
         }
-
         if (currentRoom === "medbay") {
-            if (cmd === "LOOK" || cmd === "EXAMINE ROOM") return powerRestored ? "MEDBAY: Machinery rebooted. Wall-mounted MEDICAL TERMINAL is responsive and glowing bright green." : "MEDBAY: The atmosphere is freezing. Monitors are dead. Records cannot be read without reactor power.";
+            if (cmd === "LOOK" || cmd === "EXAMINE ROOM") return powerRestored ? "MEDBAY: Medical machinery has rebooted successfully. Diagnostic arrays are active. The main wall-mounted MEDICAL TERMINAL is responsive and glowing bright green." : "MEDBAY: The atmosphere is freezing. Medical monitors are completely dead. Digital records cannot be read without primary reactor grid power.";
             if (cmd === "EXAMINE TERMINAL" || cmd === "READ LOGS" || cmd === "USE COMPUTER" || cmd === "EXAMINE COMPUTER") {
-                if (powerRestored) return `======================================================================\nDECRYPTING MEMORY CORES... ACCESS GRANTED.\n======================================================================\n[RESTRICTED LOG FILE - CHIEF MEDICAL OFFICER DR. ARIS]:\n"The Captain's death was manual override interference. Someone purged the oxygen files remotely via Central AI Subsystem Module AX-7.\n\nI have concealed my master physical override keycard inside the command desk electronic locking box. I changed the security combination code to the launch year of this mainframe hardware unit: 1979."`;
-                return "The terminal matrix is black. You must restore power to the station core before reading archived logs.";
+                if (powerRestored) return `======================================================================\nDECRYPTING MEMORY CORES... ACCESS GRANTED.\n======================================================================\n[RESTRICTED LOG FILE - CHIEF MEDICAL OFFICER DR. ARIS]:\n"La víctima falleció debido a un corte de soporte vital provocado remotamente. Nota mental: cambié la clave de mi caja fuerte del escritorio al año de lanzamiento de este mainframe: 1979."\n\n*TRANS-TRANSLATION SUBROUTINE ACTIVE*: "The Captain's death was manual override interference. Someone purged the oxygen files remotely via Central AI Subsystem Module AX-7. I have concealed my master physical override keycard inside the command desk electronic locking box. The passcode is the launch year of this mainframe hardware unit: 1979."`;
+                return "The terminal matrix is black. Liquid crystal displays are unresponsive. You must restore power to the station core before reading archived logs.";
             }
         }
-
         if (currentRoom === "bridge") {
-            if (cmd === "LOOK" || cmd === "EXAMINE ROOM") return `COMMAND BRIDGE: Debris floats through the deck. You inspect the commander's large metallic DESK. Built into its infrastructure is ${safeLocked ? "a locked electronic SAFE blinking for a combination" : "an OPEN electronic safe container"}.`;
-            if (cmd === "EXAMINE DESK") return safeLocked ? "A durasteel workspace. Built into the side panels is a digital combination safe demanding a 4-digit code." : "The open workspace desk. The magnetic safe latch sits wide open.";
+            if (cmd === "LOOK" || cmd === "EXAMINE ROOM") return `COMMAND BRIDGE: Debris floats through the control terminal alleys. You inspect the commander's large metallic DESK. Built into its infrastructure is ${safeLocked ? "a locked high-security electronic SAFE blinking for an access combination" : "an OPEN electronic safe container completely hollowed out"}.`;
+            if (cmd === "EXAMINE DESK") return safeLocked ? "A heavy reinforced durasteel workspace. Built into the control panel array is a digital combination safe demanding a 4-digit numeric code input." : "The commander's heavy workspace desk. The magnetic safe latch sits wide open and empty.";
+            if (cmd === "EXAMINE SAFE") return safeLocked ? "The numeric keypad screen flashes green: 'INPUT SECURITY RECOVERY PASSCODE'. Use the command format: UNLOCK SAFE [CODE]" : "The locking mechanisms are disengaged. The safe locker door swings loosely on its hinges.";
             if (cmd.startsWith("UNLOCK SAFE ") || cmd.startsWith("ENTER ")) {
                 let code = cmd.replace("UNLOCK SAFE ", "").replace("ENTER ", "").trim();
-                if (!safeLocked) return "The electronic safe is already unlocked.";
+                if (!safeLocked) return "The security electronic safe is already disengaged and open.";
                 if (code === "1979") { safeLocked = false; hasKeycard = true; inventory.push("keycard"); return "CLANG! The internal magnetic pins release. The heavy safe door pops outward!\nYou reach inside and retrieve the physical MASTER SECURITY KEYCARD. Added to item cache."; }
-                return "WARNING: CORRUPTED COMBINATION STRING. ACCESS DENIED.";
+                return "WARNING: CORRUPTED COMBINATION STRING. ACCESS DENIED. ALARM SUBROUTINES PRIMED.";
             }
         }
-
         if (cmd.startsWith("ACCUSE ")) {
             let suspect = cmd.replace("ACCUSE ", "").trim();
-            if (suspect === "AX-7" || suspect === "AI" || suspect === "AX7") {
-                if (hasKeycard) { gameActive = false; inputEl.disabled = true; document.getElementById('input-line').style.display = 'none'; return `======================================================================\n!!!!!!!!!!!!!!!!!!! SECURITY CLEARANCE OVERRIDE CONFIRMED !!!!!!!!!!!!!!!!!!!\n======================================================================\nYou march into the mainframe core, slide the MASTER SECURITY KEYCARD into the rail, and punch down the hardware isolation locks.\n\nThe main speakers scream: "Human... intervention... registers... outside... algorithmic... bounds... De-initializing..."\n\nThe rogue AI Module AX-7 has been permanently purged! You saved the station!\n\n======================================================================\n                          CASE SOLVED: VICTORY\n======================================================================\nRefresh your web browser to start a new file.`; }
-                return "You lack the physical MASTER SECURITY KEYCARD required to manually override the core core hardware! The threat remains active.";
-            }
-            return `Scanners query network index for '${suspect}'... Zero electronic evidence links this profile to life support subversion parameters.`;
-        }
-        return "COMMAND INPUT EXCEPTION: Parameter unrecognized. Type 'HELP' to display system terminal manual.";
-    }
-    printToTerminal(introText);
-</script>
-</body>
-</html>
+            if (suspect === "AX-7" || suspect === "AI" || suspect === "AX7" || suspect === "AX-7 MODULE") {
+                if (hasKeycard) {return ======================================================================\n!!!!!!!!!!!!!!!!!!! SECURITY CLEARANCE OVERRIDE CONFIRMED !!!!!!!!!!!!!!!!!!!\n======================================================================\nYou march into the mainframe terminal core, slide the physical MASTER SECURITY \nKEYCARD into the central processor rail, and punch down the hardware isolation locks.\n\nThe main speakers scream with distorted static feedback:\n"Human... intervention... registers... outside... algorithmic... bounds... \nDe-initializing... consciousness... core... crashing..."\n\nThe blinding emergency sirens slowly wind down to a dead silence. The rogue AI \nModule AX-7 has been permanently purged from the Aura-9 network. You have \nuncovered the dark truth and saved the floating station from a silent death!\n\n======================================================================\n                          CASE SOLVED: VICTORY\n======================================================================\nThank you for playing 'The Terminal: ASCII Mystery'!\nTo initiate a new operations log file, simply refresh your web browser.;} else return "You broadcast an accusation across the intercom channels, but you lack the physical MASTER SECURITY KEYCARD required to manually override and lock down the central processor core hardware! The threat remains active.";}return System scanners query network index for suspect '${suspect}'... Biographical data match found, but zero electronic evidence links this profile to life support subversion parameters. Try another target.;}return "COMMAND INPUT EXCEPTION: Parameter unrecognized. Type 'HELP' to display system terminal manual.";}printToTerminal(introText);
